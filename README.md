@@ -7,18 +7,20 @@ Discriminative Consensus Anchor Guidance**.
 
 - MATLAB
 - Optimization Toolbox (`quadprog`)
+- Deep Learning Toolbox (`mapstd`)
+- Parallel Computing Toolbox (`parfor`)
 
 ## Run the example
 
-The repository includes the small `3Sources` dataset and one fixed parameter
-setting. Run:
+Run:
 
 ```matlab
 demo
 ```
 
-The example uses `m = 12`, `d = 12`, `beta = 0.0625`, and `lambda = 0.125`.
-It reports ACC, NMI, Purity,  and running time.
+The example uses the included `3Sources` dataset with `m = 12`, `d = 12`,
+`beta = 0.0625`, and `lambda = 0.125`. It reports ACC, NMI, Purity, and
+running time.
 
 ## Main files
 
@@ -26,4 +28,3 @@ It reports ACC, NMI, Purity,  and running time.
 - `FMVSC_DCAG.m`: optimization algorithm
 - `inG.m`: initialization of the anchor-cluster indicator matrix
 - `data/3Sources.mat`: example dataset
-

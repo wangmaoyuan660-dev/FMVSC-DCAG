@@ -1,15 +1,16 @@
-function [U, A, P, Z, iter, obj, alpha, G] = ...
-    FMVSC_DCAG(X, labels, lambda, d, m, G0, beta)
+function [UU, A, P, Z, iter, obj, alpha, G] = ...
+    FMVSC_DCAG(X, Y, lambda, d, numanchor, G0, beta)
 
-maxIter = 350;
+maxIter = 150;
 tol = 1e-5;
-c = length(unique(labels));
+m = numanchor;
+c = length(unique(Y));
 numview = length(X);
-n = size(labels, 1);
+n = size(Y, 1);
 
 P = cell(numview, 1);
 A = randn(d, m);
-Z = zeros(m, n);
+Z = zeros(m, size(Y, 1));
 Z(:, 1:m) = eye(m);
 G = G0;
 alpha = ones(1, numview) / numview;
@@ -39,17 +40,20 @@ while flag
         P{v} = Utmp * Vtmp';
     end
 
-    b = trace(A * A');
-    S = sum(alpha.^2);
-    B = zeros(d, m);
+    cluster_matrix = G' * G;
+    B_G = 2 * pinv(sqrtm(cluster_matrix)) * G';
+    S_aux = B_G * A' / (2 * trace(A * A'));
+
+    alpha_sq_sum = sum(alpha .^ 2);
+    A_numerator = zeros(d, m);
     for v = 1:numview
-        B = B + alpha(v)^2 * (P{v}' * X{v} * Z');
+        A_numerator = A_numerator + ...
+            alpha(v)^2 * (P{v}' * X{v} * Z');
     end
-    G_inv = G * pinv(G' * G);
-    F_fixed = A * G_inv;
-    B = B + (beta / b) * (F_fixed * G');
-    R = S * (Z * Z') + (beta / b) * eye(m);
-    A = B / R;
+    A_numerator = A_numerator + (beta / 2) * (S_aux' * B_G);
+    A_denominator = alpha_sq_sum * (Z * Z') + ...
+        beta * trace(S_aux' * S_aux) * eye(m);
+    A = A_numerator / A_denominator;
 
     H = lambda * eye(m);
     E = zeros(m, n);
@@ -57,6 +61,7 @@ while flag
         H = H + alpha(v)^2 * (A' * A);
         E = E + alpha(v)^2 * (A' * P{v}' * X{v});
     end
+
     QZ = 2 * H;
     QZ = (QZ + QZ') / 2;
     Z_qp = zeros(m, n);
@@ -67,26 +72,29 @@ while flag
     end
     Z = Z_qp;
 
-    F = A * G_inv;
+    F = A * G * pinv(G' * G);
     I = eye(c);
     for j = 1:m
         dist = zeros(c, 1);
         for k = 1:c
-            dist(k) = beta * norm(A(:, j) - F(:, k))^2;
+            dist(k) = norm(A(:, j) - F(:, k))^2;
         end
         [~, idx] = min(dist);
         G(j, :) = I(idx, :);
     end
 
+    F = A * G * pinv(G' * G);
+
     M = zeros(numview, 1);
     for v = 1:numview
         M(v) = norm(X{v} - P{v} * A * Z, 'fro')^2;
     end
-    alpha = (M.^(-1)) / sum(M.^(-1));
+    alpha = (M .^ (-1)) / sum(M .^ (-1));
 
     term1 = 0;
     for v = 1:numview
-        term1 = term1 + alpha(v)^2 * norm(X{v} - P{v} * A * Z, 'fro')^2;
+        term1 = term1 + ...
+            alpha(v)^2 * norm(X{v} - P{v} * A * Z, 'fro')^2;
     end
     term2 = lambda * norm(Z, 'fro')^2;
     term3 = beta * norm(A - F * G', 'fro')^2 / trace(A * A');
@@ -100,5 +108,5 @@ while flag
 end
 
 obj = obj(1:iter);
-[U, ~, ~] = mySVD(Z', c);
+[UU, ~, ~] = mySVD(Z', c);
 end

@@ -5,12 +5,9 @@ rootDir = fileparts(mfilename('fullpath'));
 addpath(rootDir);
 addpath(fullfile(rootDir, 'measure'));
 
-
 data = load(fullfile(rootDir, 'data', '3Sources.mat'));
 X = data.X;
-
 labels = data.y(:);
-
 
 numClusters = numel(unique(labels));
 numAnchors = 12;
@@ -18,11 +15,11 @@ subspaceDim = 12;
 beta = 0.0625;
 lambda = 0.125;
 
-[~, G0] = inG(numClusters, 200, 1e-5, numAnchors);
+[~, G0] = inG(numClusters, 150, 1e-5, numAnchors);
 
 fprintf('Running FMVSC-DCAG on 3Sources...\n');
 tic;
-[embedding, A, P, Z, iter, obj, alpha, G] = ...
+[embedding, ~, ~, ~, ~, ~, ~, ~] = ...
     FMVSC_DCAG(X, labels, lambda, subspaceDim, numAnchors, G0, beta);
 elapsedTime = toc;
 
